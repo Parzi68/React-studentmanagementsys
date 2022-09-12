@@ -1,31 +1,40 @@
+import React, { useEffect, useState } from "react";
+import { Card, Container, Table, ButtonGroup, Button } from "react-bootstrap";
 import axios from "axios";
-import React, {useEffect, useState} from "react";
-import { Card, Container, Table, Button} from "react-bootstrap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
+import {Link} from 'react-router-dom'
 
-export default function StudentList() {
+export default function StudentList(props) {
+  const [students, setStudents] = useState([]);
 
-const [student, setStudent] = useState([]);
+  useEffect(() => {
+    getStudents();
+  }, []);
 
-useEffect(() => {
-  axios.get("http://localhost:8080/listStudents")
-  .then(response=>setStudent(response.data))
-  .catch(error=>alert(error));
-},[student])
+  let getStudents = () => {
+    axios
+      .get("http://localhost:8080/listStudents")
+      .then((response) => setStudents(response.data))
+      .catch((error) => alert(error));
+  };
 
-let deleteRecord = (id) => {
-  axios.delete("http://localhost:8080/student/"+id)
-  .then(response => {
-    setStudent(response.data)
-  });
-}
+  let deleteStudent = (studentId) => {
+    axios.delete("http://localhost:8080/student/"+studentId)
+    .then(response=> {
+      if (response.data !== null){
+        props.showAlert("success", "Record deleted successfully")
+        setStudents(students.filter(student=>student.id!==studentId));
+      }
+    })
+  }
 
-let updateRecord = (id) => {
-  axios.put("hhtp://localhost:8080/student/"+id)
-}
   return (
     <div className="my-3">
       <Container>
-        <Card.Header><h3>Students List</h3></Card.Header>
+        <Card.Header>
+          <h3>Students List</h3>
+        </Card.Header>
         <Card.Body>
           <Table striped bordered hover>
             <thead>
@@ -37,16 +46,26 @@ let updateRecord = (id) => {
               </tr>
             </thead>
             <tbody>
-              {student.map(student=>(
+              {students.length === 0 ? (
                 <tr>
-                <td>{student.id}</td>
-                <td>{student.name}</td>
-                <td>{student.address}</td>
-                <td><Button variant="secondary" onClick={() => updateRecord(student.id)}>Edit</Button>{' '}
-                <Button variant="danger" onClick={() => deleteRecord(student.id)}>Delete</Button>{' '}</td>
-              </tr>
-              ))}
-              
+                  <td colSpan={3}>{students.length} Studnets Available!!!</td>
+                </tr>
+              ) : (
+                students.map((student)=>
+                <tr key={student.id}>
+                  <td>{student.id}</td>
+                  <td>{student.name}</td>
+                  <td>{student.address}</td>
+                  <td>
+                    <ButtonGroup>
+                      <Link to={"/student/"+student.id}><Button size="sm" variant="outline-primary"><FontAwesomeIcon icon={faEdit}> Edit </FontAwesomeIcon></Button></Link>{ ' '}
+                      <Button size="sm" variant="outline-danger" onClick={deleteStudent.bind(this,student.id)}><FontAwesomeIcon icon={faTrash}> Delete </FontAwesomeIcon></Button>
+                      {/* <Button size="sm" variant="outline-danger" onClick={()=>deleteStudent(student.id)}><FontAwesomeIcon icon={faTrash}> Delete </FontAwesomeIcon></Button> */}
+                    </ButtonGroup>
+                  </td>
+                </tr>
+                )
+              )}
             </tbody>
           </Table>
         </Card.Body>
